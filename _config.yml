@@ -1,6 +1,6 @@
 title: Fault Documentation
 description: Building models in Fault
-theme: just-the-docs
+remote_theme: "pmarsceill/just-the-docs"
 
 url: https://fault.tech
 
