@@ -1,6 +1,6 @@
-title: Fault Documentation
+title: Fault Docs
 description: Building models in Fault
-remote_theme: "pmarsceill/just-the-docs"
+theme: just-the-docs
 
 url: https://fault.tech
 
@@ -37,4 +37,31 @@ mermaid:
   # Pick an available version from https://cdn.jsdelivr.net/npm/mermaid/
   version: "9.1.3"
 
+exclude:
+ # from https://github.com/jekyll/jekyll/blob/master/lib/site_template/_config.yml:
+   - .sass-cache/
+   - .jekyll-cache/
+   - gemfiles/
+   - Gemfile
+   - Gemfile.lock
+   - node_modules/
+   - vendor/bundle/
+   - vendor/cache/
+   - vendor/gems/
+   - vendor/ruby/
+ # specific to the theme website:
+   - bin/
+   - lib/
+   - "*.gemspec"
+   - "*.gem"
+   - LICENSE.txt
+   - package.json
+   - package-lock.json
+   - Rakefile
+   - README.md
 
+
+callouts:
+  warning:
+    title: Warning
+    color: red
