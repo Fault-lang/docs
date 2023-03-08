@@ -13,7 +13,7 @@ Fault is still in **pre-alpha** which means full of bugs. If you're up for adven
 ## Let's Model A Thing!
 Let's suppose that we work at a startup with a free lunch policy. We have a certain number of employees and need a certain number of sandwiches each day. We don't want to run out of sandwiches and we don't want to have too many leftover sandwiches.
 
-We don't need a complex model to solve this problem-- we can just get one sandwich per employee and call it a day. But this solution leaves a lot of potential edge cases that will cause our solution to fail. For example, what if some of our employees decide to take two sandwiches? What if a few decide to skip the free option and go out for lunch? What happens to the leftover sandwiches at the end of the day? Do we throw them out or do we let people eat them the for the following lunch, thereby gradually increasing our surplus?
+We don't need a complex model to solve this problem-- we can just get one sandwich per employee and call it a day. But this solution leaves a lot of potential edge cases that will cause our solution to fail. For example, what if some of our employees decide to take two sandwiches? What if a few decide to skip the free option and go out for lunch? What happens to the leftover sandwiches at the end of the day? Do we throw them out or do we let people eat them the following lunch, thereby gradually increasing our surplus?
 
 Formal models (or specifications) of systems help us diagnose and explore these edge cases. If you wanted an absolute guarantee that your lunch service will never run out of sandwiches and will never have too many extras, you need to create a model that specifies how your process for doing lunch keeps those edge cases from happening.
 
