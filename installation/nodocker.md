@@ -1,16 +1,21 @@
 ---
 layout: default
-title: Running Without Docker
+title: Building from Source
 parent: Installation
 nav_order: 2
 ---
-# Running Without Docker
-Fault runs in a Docker container because the actual execution of a model in Fault is done by a 3rd party solver which has to be built on your machine first.
+# Building from Source
+If you prefer to download and build the solver yourself, the Fault compiler is just a Go binary and can easily built to run on multiple platforms.
 
-But if you prefer to download and build the solver yourself, the Fault compiler is just a Go binary and can easily be run without Docker at all.
+## Download Fault
+You can [download Fault from GitHub](https://github.com/Fault-lang/Fault) directly or clone the repo via git
+
+```
+git clone https://github.com/Fault-lang/Fault
+```
 
 ## Configuring the Solver
-The solver is configured via environmental variables. The Docker container will set these up automatically so to run Fault without Docker you need to set them yourself. Following will configure Fault to use Z3 as its solver (the default)
+The solver is configured via environmental variables. Without these values, Fault will default to generating SMT of the model only. The following will configure Fault to use Z3 as its solver (the default)
 
 ```
 export SOLVERCMD="z3"

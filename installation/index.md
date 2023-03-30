@@ -5,30 +5,18 @@ nav_order: 2
 has_children: true
 ---
 # Installation
-By default Fault runs in a Docker container, so if your machine can run Docker you should be able to run Fault.
+Fault can be built for source if you like, but the best way to install Fault is by [downloading the correct release for your machine](https://github.com/Fault-lang/Fault/releases).
 
-## Dependencies
+Once installed the model checker of Fault needs access to a SMT solver, otherwise Fault will default to generating SMT of models only. Microsoft's Z3 is the recommended solver at this time and [can be downloaded here](https://github.com/Z3Prover/z3/releases)
 
-| Dependency | OS Support|
-| :---- | :---- |
-| Make | On Linux distributions make is available through the standard package manager. On Mac OS this requires installing XCode Command Line Tools. On Windows machines you can get make from chocolatey but honestly probably better to just concat the Dockerfiles yourself.|
-| Docker | Lots of support for different platforms on [their website](https://www.docker.com/)|
-
-## Download Fault
-You can [download Fault from GitHub](https://github.com/Fault-lang/Fault) directly or clone the repo via git
+Then in order for Fault to find your solver you need to set two configuration variables
 
 ```
-git clone https://github.com/Fault-lang/Fault
+export SOLVERCMD="z3"
+export SOLVERARG="-in"
 ```
 
-## Installing
-From the Fault directory run make
-
-```
-make fault-z3
-```
-
-This will install Fault using [Microsoft's Z3 Solver](https://www.microsoft.com/en-us/research/project/z3-3/)
+`SOLVERCMD` is the command for the solver. `SOLVERARG` is whatever argument the the solver takes to read SMT from Stdin.
 
 **That's it!** You should be able to run Fault now
 
@@ -55,36 +43,3 @@ fizz_bar
 | `-m` | Mode to run Fault in. This determines what Fault outputs and allows you to do things like stop the compiler and have it return just the SMT | - `ast` Returns Fault AST <br> - `ir` Returns LLVM IR representation of the model <br>- `smt` Returns the generated SMT <br>- `check` (default) Returns solution from the solver <br>- `visualize` Returns solution from the solver formatted in Mermaid.js visualizations. |
 | `-i` | Input format. Allows you to start the compiler from a midpoint by inputting LLVM IR or SMT. Useful in debugging |- `fspec` (default) Fault files fspec/fsystem <br>-`ll` LLVM IR<br> -`smt2` SMT-Lib2 formatted rules.|
 | `-c` | Completeness. This runs a reachability check on the state chart before compiling the model. Makes sure that there are no states that are defined but unreachable under any conditions.| `true` or `false` |
-
-## Detailed breakdown of make command
-
-{: .warning }
-This is more information for people who want it. If you ran `make fault-z3` you're all ready to go!
-
-The make command isn't really doing anything impressive, so if you don't want to download make for some reason or you want to use Fault with Docker and different solver it might be interesting to know what make is doing
-
-```
-$(shell touch "fault.Dockerfile")
-```
-
-First we create a Dockerfile for Fault.
-
-```
-cat Dockerfile ./solvers/z3.Dockerfile > fault.Dockerfile
-```
-
-The dockerfile in the repo is a template so that I can add support for different solvers and let people install what they want. So we pick out our solver and concat the dockerfile for that to the Fault default dockerfile and put them in to the dockerfile we just created.
-
-```
-@docker build -t ${NAME}-z3:${TAG} --no-cache --build-arg BUILD_VERSION=${VERSION} --build-arg BUILD_DATE=$(date) -f fault.Dockerfile .
-	@docker tag ${NAME}-z3:${TAG} ${NAME}-z3:latest
-```
-Then we have docker build the container
-
-```
-@rm fault.Dockerfile
-@cp fault-lang.sh /usr/local/bin/fault
-```
-Lastly we delete the dockerfile we created and move the shell script that acts as the interface between the user and the docker container into `/usr/local/bin`
-
-Strictly speaking the shell script isn't necessary, but it makes interacting with Fault while it runs in a container look and feel like any command line application.
