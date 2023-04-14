@@ -45,8 +45,9 @@ def lunch = flow{
 
 assert supplies.ham >= 0;
 
-for 2 run {
+for 2 init{
     day = new lunch;
+} run {
     day.prep;
     day.service;
 }
@@ -94,8 +95,9 @@ Like most model checkers, Fault uses **bounded loops** which means that Fault wi
 To tell Fault how many iterations of the loop to check and what happens during one loop we define a **run block**
 
 ```
-for 2 run {
+for 2 init {
     day = new lunch;
+} run {
     day.prep;
     day.service;
 }

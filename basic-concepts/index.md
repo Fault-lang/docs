@@ -106,8 +106,9 @@ def record = flow{
 assert resources.blocks < 4;
 assert resources.table <= 4;
 
-for 5 run {
+for 5 init {
     r = new record;
+} run {
     r.store | r.release;
 };
 ```
@@ -138,8 +139,9 @@ def control = flow{
 
 assert pool.instances > 0 eventually-always;
 
-for 3 run {
+for 3 init { 
     cluster = new control;
+} run {
     cluster.boot;
     cluster.add;
     if cluster.p.instances > 1{

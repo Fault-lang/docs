@@ -46,23 +46,24 @@ Instead flow's change stock by sending them values.
 
 ## Swapping the initial stock for another
 
-{: .warning }
-This feature is not yet available in the main branch of Fault but is close enough that it felt okay to document it.
-
 When you initialize a flow in the run block or the state chart it will automatically create unique instances of the stocks attached to it, but you can swap these out for other instances of the same stock immediately after initialization.
 
 ```
-pool2  = new pool;
-cluster = new control;
+for 2 init {
+    pool2  = new pool;
+    cluster = new control;
     cluster.p = pool2;
+} run {}
 ```
+Assignments elsewhere in the model will temporarily overwrite the value of one variable with the current state of the another.
 
 ## Concurrent Flows
 When calling a flow from the state chart or from the run block it is possible to tell Fault the these functions are running concurrently using a pipe `|` operator. You can see an example of this in `cache.fspec`
 
 ```
-for 5 run {
+for 5 init{
     r = new record;
+} run {
     r.store | r.release;
 };
 ```
