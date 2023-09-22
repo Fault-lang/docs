@@ -4,14 +4,32 @@ title: Data Types
 nav_order: 4
 ---
 # Data Types
-Fault relies on simple data types. Numeric types--Integers and Floats, a Boolean type, "Solvables"--Unknowns and Uncertains.
-
-Strings are technically allowed but serve no real purpose at this time.
+Fault relies on simple data types. Numeric types--Integers and Floats, Boolean types, "Solvables"--Unknowns and Uncertains.
 
 The type checker deduces data types from the grammar and does not need any type hints.
 
 ## All Numbers Are Reals
 Fault converts all integers into reals (floats, specifically doubles) before generating SMT. This is what ran fastest in the early performance tests of various SMT models.
+
+## Booleans
+One can define a Boolean in Fault in two ways. The first is a traditional boolean value:
+
+```
+def node = stock{
+    property1: true,
+    property2: false,
+};
+```
+
+Strings are treated as booleans with the string value used as a description of the rule expressed by the variable
+
+```
+s = "United States Postal Service";
+t = "Postal Regulatory Commission";
+u = "the Government Accountability Office";
+
+independentEst = !s && !t && !u;
+```
 
 ## Unknowns
 The first draft of the model may define stocks with numeric values, but you can also leave them undefined and have the solver figure it out for you.
