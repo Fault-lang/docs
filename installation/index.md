@@ -25,14 +25,11 @@ export SOLVERARG="-in"
 ~~~~~~~~~~
   Fault found the following scenario
 ~~~~~~~~~~
-fizz_buzz_bash
--> 4.875000 -> 3.875000 -> 3.875000 -> 3.875000 -> 2.875000 -> 2.875000 -> 2.875000 -> 1.875000 -> 1.875000 -> 1.875000 -> 0.875000 -> 0.875000 -> 0.875000 -> 0.125000 -> 0.125000
-
-fizz_foo
--> 0.500000
-
-fizz_bar
--> 2.000000
+Round,Type,Scope,Variable,Previous,Current,Probability
+0,INIT,@__run,simple_l_active_0,,false,
+0,INIT,@__run,simple_l_vault_value_0,,30,
+0,TRIGGER,@__run,simple_l_fn,,,
+0,CHANGE,@simple_l_fn,simple_l_vault_value_1,,58,
 ```
 
 ## Fault Command Line
@@ -40,6 +37,7 @@ fizz_bar
 | Flag | Meaning | Options |
 | :--- | :------ | :------ |
 | `-f` | **Required** path to the `.fsystem` or `.fspec` file |  |
-| `-m` | Mode to run Fault in. This determines what Fault outputs and allows you to do things like stop the compiler and have it return just the SMT | - `ast` Returns Fault AST <br> - `ir` Returns LLVM IR representation of the model <br>- `smt` Returns the generated SMT <br>- `check` (default) Returns solution from the solver <br>- `visualize` Returns solution from the solver formatted in Mermaid.js visualizations. |
+| `-m` | Mode to run Fault in. This determines what Fault outputs and allows you to do things like stop the compiler and have it return just the SMT | - `ast` Returns Fault AST <br> - `ir` Returns LLVM IR representation of the model <br>- `smt` Returns the generated SMT <br>- `check` (default) Returns solution from the solver. |
 | `-i` | Input format. Allows you to start the compiler from a midpoint by inputting LLVM IR or SMT. Useful in debugging |- `fspec` (default) Fault files fspec/fsystem <br>-`ll` LLVM IR<br> -`smt2` SMT-Lib2 formatted rules.|
+| `-format` | How to display the output returned by the solver | -`log` Event log style format <br>-`static` Variable are assumed to be static rules with no feedback loops <br> -`smt` No format or filtering, passes the results from the solver directly <br> -`legacy` State changes organized by variable. <br>- `visualize` Returns solution from the solver formatted in Mermaid.js visualizations.
 | `-c` | Completeness. This runs a reachability check on the state chart before compiling the model. Makes sure that there are no states that are defined but unreachable under any conditions.| `true` or `false` |
