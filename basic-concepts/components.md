@@ -105,7 +105,7 @@ start {
 For this model we're going to cut to the chase and start the cache immediately in the `lookupRecord` state while the container manager is `idle`.
 
 ## Start Block -vs- Run Block
-`.fsystem` files must have a start block but they can also have a run block too. Fault will favor the run block, executing it first, then trigger all the active states after a single loop of the run block has completed.
+`.fsystem` files can have a start block and/or a run block. Fault will favor the run block, executing it first, then trigger all the active states after a single loop of the run block has completed.
 
 When you import `.fspec` files Fault ignores whatever run blocks they might have (but honors any defined invariants like assertions or assumptions). This allows you to treat specifications as subsystems that can run as stand alone models as well as pieces of a larger more complex system.
 

@@ -5,12 +5,43 @@ nav_order: 1
 ---
 
 # Fault
-Fault is a domain specific language for building models of complex systems based on the principles of system dynamics as developed by Jay W. Forrester.
+Fault is a domain specific language for modeling complex systems as state machines and formally verifying their behavior. You define **components** with named states and the transitions between them, then ask Fault to find scenarios where things go wrong.
 
 {: .warning }
 Fault is still in **pre-alpha** which means full of bugs. If you're up for adventure you should write a model and open an [issue about it](https://github.com/Fault-lang/Fault/issues) so that I can continue to improve the stability of the compiler.
 
 ## Let's Model A Thing!
+
+The core of a Fault model is a state machine. Here's a circuit breaker — a pattern most engineers know well:
+
+```
+system circuitBreaker;
+
+component breaker = states{
+    closed: func{
+        advance(this.open) || stay();
+    },
+    open: func{
+        advance(this.halfOpen);
+    },
+    halfOpen: func{
+        advance(this.closed) || advance(this.open);
+    },
+};
+
+start {
+    breaker: closed,
+};
+```
+
+This defines a component with three states and the transitions between them. Fault will explore every possible path through the state machine and verify that the behavior matches what you expect — for example, that `open` is always reachable from `closed`, or that the breaker can never get stuck.
+
+For richer models, you can attach **stocks** (reservoirs of resources) and **flows** (rates of change) to specify exactly *how* and *when* state transitions happen. The [Basic Concepts](basic-concepts/) section walks through a full example.
+
+But first — let's look at stocks and flows on their own, since they're useful standalone too.
+
+## Stocks and Flows: The Sandwich Problem
+
 Let's suppose that we work at a startup with a free lunch policy. We have a certain number of employees and need a certain number of sandwiches each day. We don't want to run out of sandwiches and we don't want to have too many leftover sandwiches.
 
 We don't need a complex model to solve this problem-- we can just get one sandwich per employee and call it a day. But this solution leaves a lot of potential edge cases that will cause our solution to fail. For example, what if some of our employees decide to take two sandwiches? What if a few decide to skip the free option and go out for lunch? What happens to the leftover sandwiches at the end of the day? Do we throw them out or do we let people eat them the following lunch, thereby gradually increasing our surplus?
@@ -105,7 +136,7 @@ for 2 init {
 
 Here we initialize a flow with stocks attached, then we tell Fault to first run the prep function, then the service function. We tell Fault this model had a runtime of 2 loops. 
 
-We can run the model at this point and it will produce a basic simulation.
+When this model runs, it might look something like this:
 
 ```mermaid
 
@@ -145,9 +176,45 @@ assert supplies.ham >= 0;
 Asserts allow us to focus the solvers attention on how our model affects specific properties (invariants). Our simple sandwich model doesn't have many potential states because the number of sandwiches and the number of people are both set upfront. As models grow more complex there will be scenarios where many potential values could be assigned to a variable and the solver needs to choose one and move on. In these cases running the solver again might produce a slightly different scenario. [Alloy](https://cacm.acm.org/magazines/2019/9/238969-alloy/fulltext) is a good example. Every run of the solver will produce a different result.
 
 
-Because we've done a good job with our first model, Fault is happy to tell us it can find no specific failure case where our assert is untrue.
+Because we've done a good job with our first model, Fault is happy to tell us it can find no specific failure case where our assert is untrue. But we don't need a model checker to tell us the 20 sandwiches is enough to feed 15 people. It would be better if we got rid of the magic numbers
+
+```
+def supplies = stock{
+    ham,
+};
+
+def people = stock{
+    num,
+};
+```
+
+This will define both the number of sandwiches and the number of people as `unknown` and Fault will attempt to solve for the values that will make our assert untrue. We can also define a variable as unknown explicitly with `num: unknown()`
+
+Now Fault tells us that -1 sandwiches and 0.125 people will create a scenario where we do not have enough sandwiches for everyone
+
+```
+Start model, run for 2 rounds
+-----------------------------------
+   Resolving variable sandwich_day_sandwiches_ham to value -1.0
+   Resolving variable sandwich_day_toFeed_num to value 0.125000
+   Run function sandwich_day_prep (round 1)
+      sandwich_day_sandwiches_ham: -1.0 → 0.125000
+   Run function sandwich_day_prep (round 2)
+      Variable sandwich_day_sandwiches_ham is still 0.125000
+```
+
+That's still not super useful. So let's add a few assumptions to tell Fault to ignore negative values :)
+
+```
+assume supplies.ham[0] >= 0;
+assume people.num > 0;
+```
+
+Since we _want_ to find a scenario where we run out of sandwiches, we tell Fault that the _starting_ value of `supplies.ham` cannot be less than zero and **all** values of `people.num` must be greater than zero.
+
+Fault can find no scenario where we run out of sandwiches.
 
 ## Fault Philosophically
 Most languages for formal system specification are designed to prove system properties correct. But since the learning curve for writing models in these languages is so steep, when the beginner receives a positive result (no failure cases) it is almost certainly because they haven't written the model correctly. This creates a weird and frustrating experience where new users can't trust their success and can't appreciate their progresss.
 
-Fault can be used in this way if you want, but that's not what I built it for. Fault is based on the assumption that ALL systems fail eventually. The purpose of a specification written in Fault is to explore the conditions under which the system might fail.
+Fault can be used in this way if you want, but that's not what it is built for. Fault is based on the assumption that ALL systems fail eventually. The purpose of a specification written in Fault is to explore the conditions under which the system might fail.

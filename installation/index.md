@@ -20,24 +20,54 @@ export SOLVERARG="-in"
 
 **That's it!** You should be able to run Fault now
 
-```
-> fault -f=../path/to/my/model.fsystem
-~~~~~~~~~~
-  Fault found the following scenario
-~~~~~~~~~~
-Round,Type,Scope,Variable,Previous,Current,Probability
-0,INIT,@__run,simple_l_active_0,,false,
-0,INIT,@__run,simple_l_vault_value_0,,30,
-0,TRIGGER,@__run,simple_l_fn,,,
-0,CHANGE,@simple_l_fn,simple_l_vault_value_1,,58,
-```
+## Fault TUI
+
+Running `fault` with no arguments launches the interactive TUI. It walks you through compilation options in a full-screen terminal interface:
+
+1. **Setup** — enter a file path and choose compilation options (mode, input format, output format)
+2. **Progress** — an animated spinner shows compilation status
+3. **Results** — scrollable output with vim-style navigation (`j`/`k` or `↑`/`↓`, `q` to quit)
+
+If compilation fails, the **Error** view shows the failure phase, a description, and a suggestion. From there you can retry, return to setup, or quit.
+
+**TUI keybindings:**
+
+| Context | Keys | Action |
+|---------|------|--------|
+| Global | `Ctrl+C` / `Ctrl+Q` | Quit |
+| Global | `Ctrl+T` | Toggle light/dark theme |
+| Setup | `↑`/`↓`, `Enter` | Navigate and select options |
+| Results | `↑`/`↓` or `j`/`k` | Scroll output |
+| Error | `↑`/`↓` or `j`/`k`, `Enter` | Navigate actions |
+| Error | `r` / `b` / `q` | Retry / Back to setup / Quit |
 
 ## Fault Command Line
 
-| Flag | Meaning | Options |
-| :--- | :------ | :------ |
-| `-f` | **Required** path to the `.fsystem` or `.fspec` file |  |
-| `-m` | Mode to run Fault in. This determines what Fault outputs and allows you to do things like stop the compiler and have it return just the SMT | - `ast` Returns Fault AST <br> - `ir` Returns LLVM IR representation of the model <br>- `smt` Returns the generated SMT <br>- `check` (default) Returns solution from the solver. |
-| `-i` | Input format. Allows you to start the compiler from a midpoint by inputting LLVM IR or SMT. Useful in debugging |- `fspec` (default) Fault files fspec/fsystem <br>-`ll` LLVM IR<br> -`smt2` SMT-Lib2 formatted rules.|
-| `-format` | How to display the output returned by the solver | -`log` Event log style format <br>-`static` Variable are assumed to be static rules with no feedback loops <br> -`smt` No format or filtering, passes the results from the solver directly <br> -`legacy` State changes organized by variable. <br>- `visualize` Returns solution from the solver formatted in Mermaid.js visualizations.
-| `-c` | Completeness. This runs a reachability check on the state chart before compiling the model. Makes sure that there are no states that are defined but unreachable under any conditions.| `true` or `false` |
+When a file path is provided via `-f`, Fault runs in traditional CLI mode and prints results to stdout.
+
+```
+fault -f <path> [-m <mode>] [-i <format>] [-output <format>] [-complete]
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-f <path>` | _(required)_ | Path to the file to compile |
+| `-m <mode>` | `model` | Stop the compiler at a milestone: `ast`, `ir`, `smt`, or `model` |
+| `-i <format>` | `fault` | Input file format: `fault`, `ll`, or `smt2` |
+| `-output <format>` | `text` | Output format: `text` or `smt` |
+| `-complete` | false | Verify that transitions to all defined states are specified in the model |
+
+**Examples:**
+
+```bash
+# Run the full model checker
+fault -f examples/battery.fspec
+
+# Inspect the AST
+fault -f examples/battery.fspec -m ast
+
+# Generate SMT output only
+fault -f examples/battery.fspec -m smt -output smt
+```
+
+If `SOLVERCMD` or `SOLVERARG` are not set when running in `model` mode, Fault will automatically fall back to SMT output without model checking.
