@@ -2,7 +2,7 @@
 layout: default
 title: Assumptions
 parent: Invariants
-nav_order: 2
+nav_order: 3
 ---
 # Assumptions
 Assumptions follow essentially the same [rules as assertions](assertions.html) except they are _not_ negated. This means we can use assumptions to tell the solver to ignore certain potential solutions.
