@@ -28,7 +28,7 @@ def control = flow{
 };
 ```
 
-First we initialize a copy of our defined stock `p: new pool' Since Fault functions do not take arguments we can only access values that either are part of the flow or are defined as constants.
+First we initialize a copy of our defined stock `p: new pool`. Since Fault functions do not take arguments we can only access values that either are part of the flow or are defined as constants.
 
 This means we tend to group functions that change the them stock together in the same flow object.
 
@@ -56,6 +56,27 @@ for 2 init {
 } run {}
 ```
 Assignments elsewhere in the model will temporarily overwrite the value of one variable with the current state of the another.
+
+## Assertions and Assumptions
+
+You can constrain stock values using `assert` and `assume`. Both take an invariant expression and an optional temporal qualifier.
+
+```
+assert pool.instances > 0;
+assume resources.blocks >= 0;
+```
+
+**Temporal qualifiers:**
+
+| Qualifier | Meaning |
+|-----------|---------|
+| `always` | Must hold in every step |
+| `eventually` | Must hold in at least one step |
+| `eventually-always` | Must eventually hold and continue to hold |
+| `nmt <n>` | Must hold no more than `n` times |
+| `nft <n>` | Must hold no fewer than `n` times |
+
+`assert` tells the solver to find a counterexample. `assume` restricts the solution space — the solver will only explore scenarios where the assumption holds.
 
 ## Concurrent Flows
 When calling a flow from the state chart or from the run block it is possible to tell Fault the these functions are running concurrently using a pipe `|` operator. You can see an example of this in `cache.fspec`

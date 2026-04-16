@@ -16,7 +16,7 @@ In other words, we use the state functions in Fault to define **Mealy** or **Moo
 
 | :---- | :----------------|
 | **Moore Machines** | State -> State |
-| **Meaky Machines** | State + input -> State |
+| **Mealy Machines** | State + input -> State |
 
 Let's look at the `idle` state in our cache as an example
 
@@ -48,10 +48,27 @@ createRecord:func{
 
 `advance()` can change the state of either the component it is in (notice the `this` keyword in our first example) or other components defined in the system.
 
-## Timing of Advancement
-`advance()` and `stay()` can go anywhere in the state function but convention is to put them at the end. Fault will transition the state but not execute the new state until the next loop.
+## State Transition Builtins
 
-State machines tend to be loops by definition. So if Fault _didn't_ wait until the next interation of the run block to execute the state the machine is advancing into the model would likely run forever.
+There are three builtins for controlling state transitions:
+
+| Builtin | Usage | Description |
+|---------|-------|-------------|
+| `advance(target)` | `advance(this.idle)` | Transition to the specified state on the next loop |
+| `stay()` | `stay()` | Remain in the current state |
+| `leave()` | `leave(this.idle)` or `leave()` | Exit the current state; opposite of advance |
+
+## Choosing Between Transitions
+
+When multiple `advance()` or `leave()` calls are possible, you can use the `choose` keyword to make the non-deterministic choice explicit:
+
+```
+idle: func{
+    choose advance(this.expired) || advance(this.lookupRecord);
+},
+```
+
+`choose` is optional — the `||` operator already signals non-deterministic choice — but it can make the intent clearer.
 
 ## Omitting Stay
 Strictly speaking `stay()` isn't actually necessary. If you omit it and there are no options to transition out of the current state, you've effectively accomplished the same thing.

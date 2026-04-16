@@ -37,12 +37,12 @@ classDiagram
 `.fsystem` files have a set of required elements and the set of optional elements.
 
 |:-------------|:------------------|
-| **Required** | System Declaration, Components, Start Block |
-| **Optional** | Imports, Assertions, Run Block   |
+| **Required** | System Declaration, Components |
+| **Optional** | Imports, Globals, Assertions, Start Block, Run Block |
 
 A `.fsystem` file is the state chart of the entire system being modelled. It's the high level view of system behavior. Assertions particular to stock/flow behavior should be in the `.fspec` file where those behaviors are defined if possible so that everything in the `.fsystem` focuses on the state chart.
 
-The compiler expects a system declaration statement first, followed by any imports, followed by initializing stocks and flows from those imports, followed by the components, then assertions and ending the file with a start block and/or a run block. The run block (if present) always comes last.
+The compiler expects a system declaration first, followed by any imports, followed by a body containing globals, constants, components, and assertions in any order. If present, the start block comes after the body, and the run block always comes last.
 
 ```mermaid
 flowchart TD

@@ -24,6 +24,3 @@ export SOLVERCMD="yices-smt2"
 export SOLVERARG="--interactive"
 ```
 
-This is easiest if you're [running Fault without Docker](nodocker.html)
-
-
