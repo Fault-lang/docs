@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Invariants
-nav_order: 5
-has_children: true
 ---
 # Invariants
 
@@ -18,3 +15,4 @@ Fault has a couple of temporal logic operators that create SMT rules to test con
 | `eventually-always` | When this assertion becomes true it will stay true for the rest of the model runtime| `assert x eventually-always;` |
 | `nmt n` | This assertion is true no more than n times | `assert x nmt 2;`|
 | `nft n` | This assertion is true no fewer than n times | `assert x nft 2;`|
+| `available` | An `unfunc`'s precondition is satisfiable from the initial state | `assume f available;`|

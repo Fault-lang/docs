@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Custom Solvers
-parent: Installation
-nav_order: 3
 ---
 # Custom Solver
 
@@ -10,14 +7,17 @@ In theory Fault can use [any solver](https://en.wikipedia.org/wiki/Satisfiabilit
 
 Nevertheless you're welcome to try to submit PRs to add more solver support
 
-To change out the solver you need to change two environmental variables. `SOLVERCMD` is the command for the solver. `SOLVERARG` is whatever argument the the solver takes to read SMT from Stdin (which is how Fault will deliver it). By default these values are
+To change out the solver, update `SOLVERCMD` (the solver command) and `SOLVERARG` (the argument it takes to read SMT from stdin). The easiest way is with `fault config`:
 
-```
-export SOLVERCMD="z3"
-export SOLVERARG="-in"
+```bash
+# Switch to Yices
+fault config --solvercmd=yices-smt2 --solverarg=--interactive
+
+# Switch back to Z3
+fault config --solvercmd=z3 --solverarg=-in
 ```
 
-But if you wanted to switch to Yices they would be:
+This writes to `~/.faultrc` so the change persists. You can also set them as environment variables directly:
 
 ```
 export SOLVERCMD="yices-smt2"

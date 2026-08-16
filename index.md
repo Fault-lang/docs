@@ -1,14 +1,19 @@
 ---
 title: Home
-layout: default
-nav_order: 1
 ---
 
-# Fault
-Fault is a domain specific language for modeling complex systems as state machines and formally verifying their behavior. You define **components** with named states and the transitions between them, then ask Fault to find scenarios where things go wrong.
+<pre class="fault-logo">
+███████████   █████████   █████  █████ █████       ███████████
+░░███░░░░░░█  ███░░░░░███ ░░███  ░░███ ░░███       ░█░░░███░░░█
+ ░███   █ ░  ░███    ░███  ░███   ░███  ░███       ░   ░███  ░
+ ░███████    ░███████████  ░███   ░███  ░███           ░███
+ ░███░░░█    ░███░░░░░███  ░███   ░███  ░███           ░███
+ ░███  ░     ░███    ░███  ░███   ░███  ░███      █    ░███
+ █████       █████   █████ ░░████████   ███████████    █████
+ ░░░░░       ░░░░░   ░░░░░   ░░░░░░░░   ░░░░░░░░░░░    ░░░░░
+</pre>
 
-{: .warning }
-Fault is still in **pre-alpha** which means full of bugs. If you're up for adventure you should write a model and open an [issue about it](https://github.com/Fault-lang/Fault/issues) so that I can continue to improve the stability of the compiler.
+Fault is a domain specific language for modeling complex systems as state machines and formally verifying their behavior. You define **components** with named states and the transitions between them, then ask Fault to find scenarios where things go wrong.
 
 ## Let's Model A Thing!
 
@@ -29,14 +34,14 @@ component breaker = states{
     },
 };
 
-start {
-    breaker: closed,
+run {
+    breaker.closed;
 };
 ```
 
 This defines a component with three states and the transitions between them. Fault will explore every possible path through the state machine and verify that the behavior matches what you expect — for example, that `open` is always reachable from `closed`, or that the breaker can never get stuck.
 
-For richer models, you can attach **stocks** (reservoirs of resources) and **flows** (rates of change) to specify exactly *how* and *when* state transitions happen. The [Basic Concepts](basic-concepts/) section walks through a full example.
+For richer models, you can attach **stocks** (reservoirs of resources) and **flows** (rates of change) to specify exactly *how* and *when* state transitions happen. The [Language Reference](language-reference/) section walks through a full example.
 
 But first — let's look at stocks and flows on their own, since they're useful standalone too.
 
@@ -76,9 +81,11 @@ def lunch = flow{
 
 assert supplies.ham >= 0;
 
-for 2 init{
+run init{
     day = new lunch;
-} run {
+} {
+    day.prep;
+    day.service;
     day.prep;
     day.service;
 }
@@ -121,20 +128,22 @@ The `service` function is straight forward, we deduct enough sandwiches from out
 
 The `prep` function has a bit more logic to it. If we have leftover sandwiches we don't want to waste them. So we will only make more sandwiches if we don't have enough for everyone and we will only make the number of sandwiches we need to feed everybody.
 
-Like most model checkers, Fault uses **bounded loops** which means that Fault will only "run" the model for a certain number of steps. It will not check an infinite amount of time.
+Like most model checkers, Fault uses **bounded model checking** which means that Fault will only "run" the model for a fixed number of steps. It will not check an infinite amount of time.
 
-To tell Fault how many iterations of the loop to check and what happens during one loop we define a **run block**
+The **run block** defines what happens at each step. Each line is one round of execution.
 
 ```
-for 2 init {
+run init {
     day = new lunch;
-} run {
+} {
+    day.prep;
+    day.service;
     day.prep;
     day.service;
 }
 ```
 
-Here we initialize a flow with stocks attached, then we tell Fault to first run the prep function, then the service function. We tell Fault this model had a runtime of 2 loops. 
+Here we initialize a flow with stocks attached in the `init` section, then list the steps Fault should execute — first prep, then service, repeated for two days. Each line is one round.
 
 When this model runs, it might look something like this:
 
@@ -157,11 +166,11 @@ sandwich_day_toFeed_num_0--> |15.0| sandwich_day_toFeed_num_1
 
 Here you can see that when we say Fault runs the model, it isn't actually evaluating any code. Instead it is exploring all possible branches of the behavior and converting them into logic rules (more on this later). We start off with 20 sandwiches and Fault says in the first step of the model we have two scenarios: either we have 20 sandwiches or we have 15 sandwiches.
 
-You're probably wondering why we would have 15 sandwiches at any point in the first loop. It's because the first thing we do in the loop is prepare sandwiches for lunch that day and the way we've defined that process is as follows:
+You're probably wondering why we would have 15 sandwiches at any point in the first round. It's because the first thing we do in round 1 is prepare sandwiches for lunch that day and the way we've defined that process is as follows:
 
 _If the number of sandwiches is less than the number of people, add difference between sandwiches and people_
 
-But Fault will explore both the scenario where the conditional is true and the scenario where it is false. It doesn't evaluate the conditional, it neither knows nor cares if the conditional is true. It just creates a rule in SMT that says if the conditional IS true than the number of sandwiches should be increased by the number of people less the sandwiches we have. Since in the first loop we have MORE sandwiches than people that number is -5. 20 - 5 = 15 sandwiches. The solver then dismisses that value and selects the correct value of 20 for future steps.
+But Fault will explore both the scenario where the conditional is true and the scenario where it is false. It doesn't evaluate the conditional, it neither knows nor cares if the conditional is true. It just creates a rule in SMT that says if the conditional IS true than the number of sandwiches should be increased by the number of people less the sandwiches we have. Since in the first round we have MORE sandwiches than people that number is -5. 20 - 5 = 15 sandwiches. The solver then dismisses that value and selects the correct value of 20 for future steps.
 
 So the way this plays out is that state 0 of the variable sandwich_day_sandwiches_ham is 20, state 1 (the conditional is true) is 15, state 2 (the conditional is false) is 20 and state 3 is a _phi value_ where the solver selects either the true branch or the false branch. Written this way the model checker briefly peeks into other potential futures.
 
@@ -193,14 +202,18 @@ This will define both the number of sandwiches and the number of people as `unkn
 Now Fault tells us that -1 sandwiches and 0.125 people will create a scenario where we do not have enough sandwiches for everyone
 
 ```
-Start model, run for 2 rounds
+Start model, run for 4 rounds
 -----------------------------------
    Resolving variable sandwich_day_sandwiches_ham to value -1.0
    Resolving variable sandwich_day_toFeed_num to value 0.125000
    Run function sandwich_day_prep (round 1)
       sandwich_day_sandwiches_ham: -1.0 → 0.125000
-   Run function sandwich_day_prep (round 2)
-      Variable sandwich_day_sandwiches_ham is still 0.125000
+   Run function sandwich_day_service (round 2)
+      sandwich_day_sandwiches_ham: 0.125000 → 0.0
+   Run function sandwich_day_prep (round 3)
+      Variable sandwich_day_sandwiches_ham is still 0.0
+   Run function sandwich_day_service (round 4)
+      Variable sandwich_day_sandwiches_ham is still 0.0
 ```
 
 That's still not super useful. So let's add a few assumptions to tell Fault to ignore negative values :)

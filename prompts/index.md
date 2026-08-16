@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Generating Fault from LLMs
-nav_order: 6
-has_children: true
 ---
 
 # Generating Fault from LLMs
@@ -99,7 +96,7 @@ After the LLM generates Fault code, do the following before running the solver:
 
 2. **Read every assertion** — ask yourself whether each one can actually be violated by the flows in the model. If not, the model will always return unsat and you will learn nothing.
 
-3. **Verify the run block** — confirm that the number of rounds is sufficient for the failure scenario you care about, and that the concurrent operations (`|`) reflect the actual concurrency you are testing.
+3. **Verify the run block** — confirm that the number of steps is sufficient for the failure scenario you care about, and that the concurrent operations (`|`) reflect the actual concurrency you are testing.
 
 4. **Run the model checker** — `fault -f model.fspec`. A useful result is either a counterexample (sat) or a clear explanation of why no counterexample exists.
 

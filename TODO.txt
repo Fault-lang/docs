@@ -1,0 +1,101 @@
+Program Synthesis Documentation
+================================
+
+Fault supports program synthesis via the `__` (double underscore) placeholder in
+run blocks. When the solver encounters a `__` step, it chooses which flow function
+to call at that position — effectively asking "what should happen here to satisfy
+the assertions?"
+
+This feature needs its own documentation page. Suggested location:
+  basic-concepts/synthesis.md
+  (add as a child of basic-concepts, nav_order: 7)
+
+---
+
+WHAT TO COVER
+-------------
+
+1. What it is
+   - Program synthesis = the solver picks the function, not the programmer
+   - `__` is a placeholder that says "something runs here — find what"
+   - The solver chooses from all flow functions declared in the init block
+   - Result: Fault tells you which function sequence satisfies your assumptions
+
+2. Basic syntax
+   - `__` in a run step position
+   - Can be mixed with explicit calls
+   - Multiple `__` slots are independent — each gets its own choice
+
+   Example (from synth_pick.fspec):
+
+     run init{ inst = new ctrl; } {
+         __;
+     };
+
+   Example with a fixed step before a synthesis slot (synth_sandwich.fspec):
+
+     run init{ inst = new account; } {
+         inst.deposit;
+         __;
+     };
+
+   Example with multiple slots (synth_sequence.fspec):
+
+     run init{ inst = new ops; } {
+         __;
+         __;
+     };
+
+3. Use assumptions, not assertions
+   - Synthesis uses `assume` (not `assert`) to guide the solver toward a solution
+   - `assume` restricts the solution space; the solver picks a function sequence
+     that makes the assumption satisfiable
+   - `assert` negates the condition and looks for violations — wrong tool here
+   - Example:
+       assume counter.value > 10 eventually;   // solver must find a path where this holds
+   - Contrast with:
+       assert counter.value > 10;              // solver tries to BREAK this — different goal
+
+4. How the solver output looks
+   - Explain what the trace output shows for synthesis slots
+   - The solver reports which function was chosen at each `__` position
+   - Example output format (needs a real run to capture actual output):
+       Synthesis slot 1: chose increment
+       Synthesis slot 2: chose increment
+
+5. Candidate pool
+   - All flow functions on instances declared in the init block are candidates
+   - Only functions from instances in scope are considered
+   - If there are multiple instances of different flow types, functions from all
+     of them are in the candidate pool
+
+6. Limitations / gotchas to document
+   - `__` cannot appear in `.fsystem` run blocks (system spec synthesis not supported)
+   - `__` cannot be mixed with `|` (concurrent synthesis not supported)
+   - Stock-level `solvable` type (e.g. `value: uncertain(1, 0.5)`) is a separate
+     feature — do not confuse with `__` synthesis slots
+   - If no function sequence satisfies the assumption, the solver returns unsat —
+     check that the assumption is actually reachable
+
+7. Worked example
+   - Walk through synth_sandwich from scratch:
+     * define the problem ("what operation restores the balance?")
+     * write stocks and flows
+     * write an assumption expressing the desired end state
+     * put `__` where the unknown step is
+     * show the solver output naming the chosen function
+
+8. Relationship to the rest of Fault
+   - Normal run block: you specify every step, Fault checks your assertions
+   - Synthesis run block: you leave gaps, Fault fills them in to satisfy your assumptions
+   - Both can coexist in the same run block (explicit steps + synthesis slots)
+
+---
+
+OPEN QUESTIONS TO RESOLVE BEFORE WRITING
+-----------------------------------------
+- What does the actual CLI output look like for a synthesis run? Capture a real example.
+- Is there a `-m synth` or similar mode flag? Document it if so.
+- Are there any constraints on which functions are eligible candidates
+  (e.g., must the function be side-effect-free, or are all functions considered)?
+- Can `__` appear in `.fsystem` run blocks with sysRunStmt? (Currently no — confirm.)

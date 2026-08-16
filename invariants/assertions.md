@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Assertions
-parent: Invariants
-nav_order: 2
 ---
 # Assertions
 
@@ -72,3 +69,20 @@ assert (replCache.lookupRecord && !replCache.expire) || (!replCache.lookupRecord
 ...would assert that the cache cannot be looking up records while also deleting them.
 
 When used in asserts, state are treated as booleans establishing whether the state is active or not.
+
+## When/Then
+
+The `when A then B` construction expresses a conditional invariant: B must be true whenever A is true. B may be false when A is false.
+
+```
+assert when state.accessGranted then state.authenticated;
+```
+
+This is equivalent to `assert !state.accessGranted || state.authenticated` but reads more clearly as an intent. It works with both `assert` and `assume`, and accepts temporal qualifiers:
+
+```
+assert when lock.heldByA then !lock.heldByB always;
+assume when queue.full then queue.size >= queue.capacity;
+```
+
+`when/then` can only be used in assertions and assumptions — not in state functions or run blocks.

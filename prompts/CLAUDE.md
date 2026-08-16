@@ -1,8 +1,5 @@
 ---
-layout: default
 title: Claude
-parent: Generating Fault from LLMs
-nav_order: 2
 ---
 
 # CLAUDE.md — How to Write Fault Models
@@ -85,17 +82,21 @@ If you're not sure what to assert, ask: what would have to be true for this syst
 
 ### Step 5 — Write your run block
 
-The run block defines what happens each round. Use `|` to test concurrent execution.
+The run block defines the sequence of steps to verify. Each line is one round. Use `|` to test concurrent execution. Instantiate your flows in the `init` section.
 
 ```
-for 5 init {
+run init {
     r = new record;
-} run {
+} {
+    r.store | r.release;
+    r.store | r.release;
+    r.store | r.release;
+    r.store | r.release;
     r.store | r.release;
 };
 ```
 
-The number of rounds should be enough for interesting state to accumulate. Start with 3–5 and increase if the failure you're looking for requires more steps to manifest.
+The number of steps should be enough for interesting state to accumulate. Start with 3–5 and increase if the failure you're looking for requires more steps to manifest.
 
 ### Step 6 — Add a state machine (if needed)
 
@@ -111,8 +112,11 @@ If your system has distinct operating modes (idle, processing, error, etc.), add
 |----|---------|-------|
 | `<-` | Increment stock | flow functions only |
 | `->` | Decrement stock | flow functions only |
+| `=` | Overwrite stock value | flow functions only |
 | `\|\|` | Non-deterministic choice | state functions |
 | `\|` | Concurrent execution | run block |
+| `::count` | Count instances of a `multiple` flow | `assume l::count < 5` |
+| `when A then B` | Conditional invariant (A implies B) | `assert`/`assume` only |
 | `advance(this.state)` | Transition to state | state functions |
 | `advance(other.state)` | Cross-component transition | state functions |
 | `stay()` | Remain in current state | state functions |
@@ -124,9 +128,15 @@ If your system has distinct operating modes (idle, processing, error, etc.), add
 |------|---------|-------|
 | numeric | `blocks: 0` | All numbers become reals internally |
 | boolean | `active: true` | |
-| unknown | `blocks` or `blocks: unknown()` | Solver picks the value |
+| unknown | `blocks` or `blocks: unknown()` | Solver picks any value |
 | uncertain | `blocks: uncertain(1, 0.5)` | Normal dist, mean + sigma; returns probabilities |
 | string | `s = "description"` | Treated as a boolean in logic expressions |
+| `int()` | `offset: int()` | Solver picks any integer |
+| `float()` | `reading: float()` | Solver picks any float |
+| `bool()` | `flag: bool()` | Solver picks true or false |
+| `natural(n)` | `size: natural(0)` | Non-negative integer starting from n |
+| `whole()` | `ticks: whole()` | Non-negative integer, unconstrained start |
+| `param()` | `threshold: param()` | Template parameter — filled in by `fault render` |
 
 ### Temporal Qualifiers for Assertions
 
@@ -137,6 +147,7 @@ assert x > 0 eventually;         // must hold at least once
 assert x > 0 eventually-always;  // must hold once, then keep holding
 assert x > 0 nmt 3;              // must hold no more than 3 times
 assert x > 0 nft 2;              // must hold no fewer than 2 times
+assume myFunc available;         // unfunc precondition is satisfiable from initial state
 ```
 
 ### State Functions
@@ -162,6 +173,76 @@ component foo = states{
 
 States can be referenced as booleans in conditions: `if !foo.expired { ... }`
 
+### Stock Inheritance
+
+A stock can inherit all fields from another using `extends`. Use `exclude` to drop specific fields.
+
+```
+def base = stock{
+    value: 0,
+    limit: 100,
+};
+
+def extended = stock{
+    extends base,        // inherits value and limit
+    extra: 5,
+};
+
+def minimal = stock{
+    extends base,
+    exclude limit,       // inherits value only
+};
+```
+
+---
+
+### Declarative Functions: `unfunc`
+
+`unfunc` replaces `func` when you want to declare preconditions and effects rather than write imperative steps. Used with program synthesis.
+
+```
+def ops = flow{
+    q: new queue,
+    process: unfunc{
+        requires q.pending > 0,    // precondition
+        emits q.pending -> 1,      // effect: decrement
+        emits q.done <- 1,         // effect: increment
+    },
+};
+```
+
+`requires` — solver only selects this function when the condition holds.
+`emits` — declares an effect. Supports `=`, `<-`, `->`.
+
+---
+
+### Program Synthesis
+
+Use `__` (synthesis slots) in the run block and `assume` (not `assert`) as goals. The solver fills each slot with a function call that satisfies the goal.
+
+```
+// Goal: find ops that reach balance > 100
+assume wallet.balance > 100 eventually;
+
+run init {
+    acct = new ops;
+} {
+    __;
+    __;
+    __;
+    __;
+    __;
+};
+```
+
+Key rules:
+- `__` slots are independent — the solver may pick a different function for each
+- Use `assume` for synthesis goals, never `assert` (assert looks for violations, assume restricts to satisfying solutions)
+- Mix explicit steps and `__` freely: `acct.deposit; __; __;`
+- If the goal is unreachable in the given number of steps, the solver returns `unsat` — add more `__` slots
+
+---
+
 ### Imports (fsystem only)
 
 ```
@@ -181,17 +262,23 @@ Only `.fsystem` files can import. One level only — specs cannot import other s
 ## Running Fault
 
 ```bash
-# Generate SMT only (no solver required — good for checking syntax)
-fault -f model.fspec -m smt
-
-# Full model check (requires SOLVERCMD and SOLVERARG env vars)
+# Full model check (requires SOLVERCMD and SOLVERARG env vars or ~/.faultrc)
 fault -f model.fspec
 
+# Generate SMT only (no solver required — good for checking syntax)
+fault -f model.fspec -m smt --output smt
+
+# Type-check without compiling
+fault lint -f model.fspec
+
 # Check reachability — are all states reachable from start?
-fault -f model.fsystem -complete
+fault -f model.fsystem --complete
 
 # Inspect the AST (useful for debugging parse issues)
 fault -f model.fspec -m ast
+
+# JSON output (result to stdout, warnings to stderr)
+fault -f model.fspec --format json
 ```
 
 Required environment for model checking:
@@ -200,7 +287,7 @@ export SOLVERCMD="z3"
 export SOLVERARG="-in"
 ```
 
-Without these set, Fault falls back to SMT output automatically.
+Without these set, Fault returns an error in model mode. Use `-m smt` with `--output smt` to inspect generated SMT without a solver.
 
 ---
 
@@ -210,7 +297,7 @@ Without these set, Fault falls back to SMT output automatically.
 If the solver immediately finds a violation at step 0, your initial stock values may already violate the assertion. Start stocks at values that represent normal operation.
 
 **Assertions that are impossible to violate**
-If the model returns no result (unsat), either the assertion is vacuously true given your model, or you need more rounds, more concurrent flows, or weaker assumptions.
+If the model returns no result (unsat), either the assertion is vacuously true given your model, or you need more steps in the run block, more concurrent flows, or weaker assumptions.
 
 **Forgetting that `|` generates all orderings**
 `a.fn | b.fn | c.fn` generates 6 permutations. Three concurrent flows is usually enough — more than that makes the SMT very large.
@@ -223,6 +310,9 @@ If the model returns no result (unsat), either the assertion is vacuously true g
 
 **Variable names with underscores**
 Not supported. Use camelCase.
+
+**Using `assert` as a synthesis goal**
+In synthesis mode, `assert` looks for violations — it will immediately find a counterexample at the initial state if the condition isn't trivially satisfied. Use `assume` to express what you want the solver to find. `assert` is for safety properties; `assume` is for synthesis goals.
 
 **Assuming imported spec run blocks execute**
 When a `.fspec` is imported into a `.fsystem`, its run block is ignored. Only its stock/flow definitions and assertions carry over. Define your run block in the `.fsystem` or in the standalone `.fspec`.
@@ -252,9 +342,16 @@ def ops = flow{
 assert buffer.size < buffer.capacity;
 assert buffer.size >= 0;
 
-for 8 init {
+run init {
     w = new ops;
-} run {
+} {
+    w.enqueue | w.dequeue;
+    w.enqueue | w.dequeue;
+    w.enqueue | w.dequeue;
+    w.enqueue | w.dequeue;
+    w.enqueue | w.dequeue;
+    w.enqueue | w.dequeue;
+    w.enqueue | w.dequeue;
     w.enqueue | w.dequeue;
 };
 ```

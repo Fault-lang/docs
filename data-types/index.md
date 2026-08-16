@@ -1,7 +1,5 @@
 ---
-layout: default
 title: Data Types
-nav_order: 4
 ---
 # Data Types
 Fault relies on simple data types. Numeric types--Integers and Floats, Boolean types, "Solvables"--Unknowns and Uncertains.
@@ -89,3 +87,55 @@ cache_r_machine_blocks
 ```
 
 For the time being Uncertains assume a normal distribution. Future updates may offer more options or the ability to restrict improbable values from the solution space.
+
+## Constrained Numeric Types
+
+These types tell the solver to restrict a value to a specific numeric domain.
+
+### `natural(n)`
+
+A natural number — a non-negative integer starting from `n`.
+
+```
+def q = stock{
+    size: natural(0),
+};
+```
+
+Useful when a quantity is inherently countable and cannot be negative or fractional (queue depth, retry count, etc.).
+
+### `whole()`
+
+A whole number — a non-negative integer with no specified starting value. The solver picks any whole number.
+
+```
+def t = stock{
+    ticks: whole(),
+};
+```
+
+Similar to `natural(0)` but signals intent more clearly when the starting value doesn't matter.
+
+### `int()` and `float()`
+
+Constrain a field to the integer or float domain respectively, without restricting the sign:
+
+```
+def sensor = stock{
+    reading: float(),
+    offset: int(),
+};
+```
+
+## Parameterized Values: `param()`
+
+`param()` marks a field as a parameter for the [template mode](../installation/config) (`-m template`). The Fault compiler will generate a `.params.json` file with these fields, and the `fault render` command substitutes concrete values at model-check time.
+
+```
+def limits = stock{
+    threshold: param(),
+    capacity: param(),
+};
+```
+
+This lets you check the same model against multiple parameter sets without recompiling.
