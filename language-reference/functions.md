@@ -10,7 +10,7 @@ Fault has three kinds of functions: `func`, `sfunc`, and `unfunc`. Because Fault
 |---------|---------------|-------------------|
 | `func` | `flow{}` in `.fspec` files | A stock value is changed somehow |
 | `sfunc` | `component` states in `.fsystem` files | The state machine transitions |
-| `unfunc` | `flow{}` in `.fspec` files | Tbe preconditions and effects of a black box function |
+| `unfunc` | `flow{}` in `.fspec` files | The preconditions and effects of a black box function |
 
 ## `func`
 
