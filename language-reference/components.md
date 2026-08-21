@@ -16,16 +16,16 @@ So in Fault we define a component and give it those states
 
 ```
 component containerMng = states{
-    idle: func{
+    idle: sfunc{
        ...
     },
-    pullContainer: func{
+    pullContainer: sfunc{
         ...
     },
-    standUpContainer: func{
+    standUpContainer: sfunc{
         ...
     },
-    shutdownContainer: func{
+    shutdownContainer: sfunc{
         ...
     },
 };
@@ -50,19 +50,19 @@ The cache too can be idle when no requests are coming in. When a request enters 
 
 ```
 component replCache = states{
-    idle: func{
+    idle: sfunc{
        ...
     },
-    lookupRecord: func{
+    lookupRecord: sfunc{
         ...
     },
-    returnRecord: func{
+    returnRecord: sfunc{
         ...
     },
     createRecord:func{
         ...
     },
-    expired: func{
+    expired: sfunc{
         ...
     },
 };

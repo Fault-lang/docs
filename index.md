@@ -13,23 +13,29 @@ title: Home
  ░░░░░       ░░░░░   ░░░░░   ░░░░░░░░   ░░░░░░░░░░░    ░░░░░
 </pre>
 
-Fault is a domain specific language for modeling complex systems as state machines and formally verifying their behavior. You define **components** with named states and the transitions between them, then ask Fault to find scenarios where things go wrong.
+Fault is a domain specific language for encoding models of systems into Satisfiability Modulo Theories (SMT). It was developed originally to apply formal verification techniques to system dynamic style models, but it can currently do much more than that.
+
+Somethings to use Fault for:
+- Modeling the behavior of a state machine
+- Making traditional boolean logic both machine executable AND human readable
+- Solving program synthesis problems
+- Explore the limits of control logic in feedback loops.
 
 ## Let's Model A Thing!
 
-The core of a Fault model is a state machine. Here's a circuit breaker — a pattern most engineers know well:
+The simpliest and easiest model to write in Fault is a state machine. Here's a circuit breaker — a pattern most engineers know well:
 
 ```
 system circuitBreaker;
 
 component breaker = states{
-    closed: func{
+    closed: sfunc{
         advance(this.open) || stay();
     },
-    open: func{
+    open: sfunc{
         advance(this.halfOpen);
     },
-    halfOpen: func{
+    halfOpen: sfunc{
         advance(this.closed) || advance(this.open);
     },
 };
@@ -41,7 +47,7 @@ run {
 
 This defines a component with three states and the transitions between them. Fault will explore every possible path through the state machine and verify that the behavior matches what you expect — for example, that `open` is always reachable from `closed`, or that the breaker can never get stuck.
 
-For richer models, you can attach **stocks** (reservoirs of resources) and **flows** (rates of change) to specify exactly *how* and *when* state transitions happen. The [Language Reference](language-reference/) section walks through a full example.
+Although Fault has a few distinct model types, you can actually import and attach one model to another, building out more complex behaviors. For example, you can attach **stocks** (reservoirs of resources) and **flows** (rates of change) to specify exactly *how* and *when* state transitions happen. The [Language Reference](language-reference/) section walks through a full example.
 
 But first — let's look at stocks and flows on their own, since they're useful standalone too.
 
@@ -51,7 +57,9 @@ Let's suppose that we work at a startup with a free lunch policy. We have a cert
 
 We don't need a complex model to solve this problem-- we can just get one sandwich per employee and call it a day. But this solution leaves a lot of potential edge cases that will cause our solution to fail. For example, what if some of our employees decide to take two sandwiches? What if a few decide to skip the free option and go out for lunch? What happens to the leftover sandwiches at the end of the day? Do we throw them out or do we let people eat them the following lunch, thereby gradually increasing our surplus?
 
-Formal models (or specifications) of systems help us diagnose and explore these edge cases. If you wanted an absolute guarantee that your lunch service will never run out of sandwiches and will never have too many extras, you need to create a model that specifies how your process for doing lunch keeps those edge cases from happening.
+At the time Fault was created there were tools to build models that simulated the outcomes of this type of system, but nothing that allowed you to formalize and check whether the algorithms we create to manage in-flows, out-flows and autoscaling would behavior correctly
+
+If you wanted an absolute guarantee that your lunch service will never run out of sandwiches and will never have too many extras, you need to create a model that specifies how your process for doing lunch keeps those edge cases from happening.
 
 Okay here's our model in Fault:
 
@@ -93,7 +101,7 @@ run init{
 
 Let's break this down bit by bit.
 
-The basic parts of a Fault spec are **stocks** and **flows**. Stocks are collections of resources, in this case sandwiches and people. 
+The basic parts of the spec are **stocks** and **flows**. Stocks are collections of resources, in this case sandwiches and people. 
 
 ```
 def supplies = stock{
@@ -130,6 +138,8 @@ The `prep` function has a bit more logic to it. If we have leftover sandwiches w
 
 Like most model checkers, Fault uses **bounded model checking** which means that Fault will only "run" the model for a fixed number of steps. It will not check an infinite amount of time.
 
+But it also shouldn't have to! You'll see why in a minute.
+
 The **run block** defines what happens at each step. Each line is one round of execution.
 
 ```
@@ -145,26 +155,9 @@ run init {
 
 Here we initialize a flow with stocks attached in the `init` section, then list the steps Fault should execute — first prep, then service, repeated for two days. Each line is one round.
 
-When this model runs, it might look something like this:
+When Fault runs the model, it isn't actually evaluating any code. Instead it compiles to SMT and feeds the model into a SMT solver. The solver explores all possible branches of the behavior. If we've written asserts, the solver will try to prove our assertions wrong (more on this later)
 
-```mermaid
-
-flowchart TD
-		sandwich_day_sandwiches_ham_0--> |20.0| sandwich_day_sandwiches_ham_1
-	sandwich_day_sandwiches_ham_1--> |15.0| sandwich_day_sandwiches_ham_2
-	sandwich_day_sandwiches_ham_0--> |20.0| sandwich_day_sandwiches_ham_2
-	sandwich_day_sandwiches_ham_2--> |20.0| sandwich_day_sandwiches_ham_3
-	sandwich_day_sandwiches_ham_3--> |5.0| sandwich_day_sandwiches_ham_4
-	sandwich_day_sandwiches_ham_4--> |15.0| sandwich_day_sandwiches_ham_5
-	sandwich_day_sandwiches_ham_3--> |5.0| sandwich_day_sandwiches_ham_5
-	sandwich_day_sandwiches_ham_5-->  
-sandwich_day_sandwiches_ham(0.0)
-sandwich_day_toFeed_num_0--> |15.0| sandwich_day_toFeed_num_1
-	sandwich_day_toFeed_num_1--> |15.0| sandwich_day_toFeed_num_2
-	sandwich_day_toFeed_num_2--> sandwich_day_toFeed_num(15.0)
-```
-
-Here you can see that when we say Fault runs the model, it isn't actually evaluating any code. Instead it is exploring all possible branches of the behavior and converting them into logic rules (more on this later). We start off with 20 sandwiches and Fault says in the first step of the model we have two scenarios: either we have 20 sandwiches or we have 15 sandwiches.
+We start off with 20 sandwiches and Fault says in the first step of the model we have two scenarios: either we have 20 sandwiches or we have 15 sandwiches.
 
 You're probably wondering why we would have 15 sandwiches at any point in the first round. It's because the first thing we do in round 1 is prepare sandwiches for lunch that day and the way we've defined that process is as follows:
 
@@ -174,7 +167,7 @@ But Fault will explore both the scenario where the conditional is true and the s
 
 So the way this plays out is that state 0 of the variable sandwich_day_sandwiches_ham is 20, state 1 (the conditional is true) is 15, state 2 (the conditional is false) is 20 and state 3 is a _phi value_ where the solver selects either the true branch or the false branch. Written this way the model checker briefly peeks into other potential futures.
 
-There are ways of fine tuning our specification to eliminate this behavior that we'll get to later. What's useful about looking at all possible scenarios in the model is that it allows us to consider what the system behavior would be if safety checks happened too late, if we've created race conditions, if we don't get a response from a request ... all things that happen on real systems and sometimes cause problems.
+What's useful about looking at all possible scenarios in the model is that it allows us to consider what the system behavior would be if safety checks happened too late, if we've created race conditions, if we don't get a response from a request ... all things that happen on real systems and sometimes cause problems.
 
 There's one more part of our model we're going to add. We're going to tell Fault we believe it is impossible that we'll run out of sandwiches and ask it to prove us wrong.
 
@@ -198,6 +191,8 @@ def people = stock{
 ```
 
 This will define both the number of sandwiches and the number of people as `unknown` and Fault will attempt to solve for the values that will make our assert untrue. We can also define a variable as unknown explicitly with `num: unknown()`
+
+To ensure Fault encodes variables with the right type, it's a good idea to declare `unknown` with a type hint: `num: unknown(0)` or `num: unknown(0.0)` or `num: unknown(false)` This will not assign a starting value (after all the whole point is the starting value is _unknown_)
 
 Now Fault tells us that -1 sandwiches and 0.125 people will create a scenario where we do not have enough sandwiches for everyone
 
@@ -225,7 +220,7 @@ assume people.num > 0;
 
 Since we _want_ to find a scenario where we run out of sandwiches, we tell Fault that the _starting_ value of `supplies.ham` cannot be less than zero and **all** values of `people.num` must be greater than zero.
 
-Fault can find no scenario where we run out of sandwiches.
+This time, Fault can find no scenario where we run out of sandwiches.
 
 ## Fault Philosophically
 Most languages for formal system specification are designed to prove system properties correct. But since the learning curve for writing models in these languages is so steep, when the beginner receives a positive result (no failure cases) it is almost certainly because they haven't written the model correctly. This creates a weird and frustrating experience where new users can't trust their success and can't appreciate their progresss.

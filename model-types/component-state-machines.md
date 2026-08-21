@@ -28,29 +28,29 @@ A database cluster has a primary node and a replica. When the primary fails, the
 system dbCluster;
 
 component primary = states{
-    active: func{
+    active: sfunc{
         advance(this.failing) || stay();
     },
-    failing: func{
+    failing: sfunc{
         advance(this.failed);
     },
-    failed: func{
+    failed: sfunc{
         stay();
     },
 };
 
 component replica = states{
-    standby: func{
+    standby: sfunc{
         if primary.failed {
             advance(this.promoting);
         } else {
             stay();
         }
     },
-    promoting: func{
+    promoting: sfunc{
         advance(this.active);
     },
-    active: func{
+    active: sfunc{
         stay();
     },
 };
@@ -62,7 +62,7 @@ States are functions. `advance()` transitions to the named state. `stay()` remai
 
 The replica's `standby` state watches `primary.failed` to decide when to start promoting. This is how Fault models inter-component signaling — no explicit messages, just state visibility.
 
-The `||` in `active: func{ advance(this.failing) || stay(); }` means the solver will explore both the "stays active" and "starts failing" paths when looking for counterexamples.
+The `||` in `active: sfunc{ advance(this.failing) || stay(); }` means the solver will explore both the "stays active" and "starts failing" paths when looking for counterexamples.
 
 ### Writing Assertions
 
@@ -96,29 +96,29 @@ Each round runs both components concurrently. Fault explores whether the primary
 system dbCluster;
 
 component primary = states{
-    active: func{
+    active: sfunc{
         advance(this.failing) || stay();
     },
-    failing: func{
+    failing: sfunc{
         advance(this.failed);
     },
-    failed: func{
+    failed: sfunc{
         stay();
     },
 };
 
 component replica = states{
-    standby: func{
+    standby: sfunc{
         if primary.failed {
             advance(this.promoting);
         } else {
             stay();
         }
     },
-    promoting: func{
+    promoting: sfunc{
         advance(this.active);
     },
-    active: func{
+    active: sfunc{
         stay();
     },
 };
@@ -173,7 +173,7 @@ import("connections.fspec");
 global conns = new connections.connMgr;
 
 component primary = states{
-    active: func{
+    active: sfunc{
         conns.drain;
         if connections.pool.active = 0 {
             advance(this.failing);

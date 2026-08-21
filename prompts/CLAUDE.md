@@ -156,16 +156,16 @@ State functions use a restricted body — only state steps are valid, not arbitr
 
 ```
 component foo = states{
-    idle: func{
+    idle: sfunc{
         advance(this.active) || advance(this.expired);
     },
-    active: func{
+    active: sfunc{
         someFlow.method;
         if someFlow.stock.value > 5 {
             advance(this.idle);
         }
     },
-    expired: func{
+    expired: sfunc{
         stay();
     },
 };

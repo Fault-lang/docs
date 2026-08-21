@@ -157,7 +157,7 @@ def s = stock{
 Makes a non-deterministic exclusive-or choice explicit. `choose A || B || C` ensures exactly one branch is taken — the solver cannot take multiple branches simultaneously.
 
 ```
-idle: func{
+idle: sfunc{
     choose advance(this.active) || advance(this.expired);
 },
 ```
@@ -171,8 +171,8 @@ Declares a state machine with named states.
 
 ```
 component breaker = states{
-    closed: func{ ... },
-    open:   func{ ... },
+    closed: sfunc{ ... },
+    open:   sfunc{ ... },
 };
 ```
 
@@ -297,7 +297,7 @@ Previously used to set the number of verification rounds (`for 2 run{}`). Remove
 ---
 
 ## `func`
-Declares an imperative function inside a flow or a state body inside a component.
+Declares an imperative function inside a `flow{}` definition. Flow functions contain arithmetic expressions and stock mutations (`<-`, `->`, `=`).
 
 ```
 refill: func{
@@ -305,7 +305,7 @@ refill: func{
 },
 ```
 
-See also: [`unfunc`](#unfunc) for the declarative alternative.
+For state bodies inside a `component`, use [`sfunc`](#sfunc) instead. See also: [`unfunc`](#unfunc) for the declarative alternative.
 
 ---
 
@@ -454,6 +454,21 @@ Each line in the body is one round. The number of rounds determines verification
 
 ---
 
+## `sfunc` {#sfunc}
+Declares a state body inside a `component`. State functions may contain `advance()`, `stay()`, `leave()`, flow triggers, and stock conditionals. They may **not** contain stock mutations (`<-`, `->`, `=`).
+
+```
+component breaker = states{
+    closed: sfunc{
+        advance(this.open) || stay();
+    },
+};
+```
+
+Replaces the old `func` keyword for state bodies (breaking change, 2026-08-17). Flow functions still use [`func`](#func).
+
+---
+
 ## `spec`
 Declares the name of a `.fspec` file. Must be the first statement.
 
@@ -472,7 +487,7 @@ Previously used to declare the initial state of each component in a `.fsystem` f
 Remains in the current state. A no-op that makes intent explicit.
 
 ```
-idle: func{
+idle: sfunc{
     stay();
 },
 ```
@@ -486,8 +501,8 @@ Declares the body of a [`component`](#component) as a map of named state functio
 
 ```
 component breaker = states{
-    closed: func{ ... },
-    open:   func{ ... },
+    closed: sfunc{ ... },
+    open:   sfunc{ ... },
 };
 ```
 

@@ -18,7 +18,7 @@ In other words, we use the state functions in Fault to define **Mealy** or **Moo
 Let's look at the `idle` state in our cache as an example
 
 ```
-idle: func{
+idle: sfunc{
         advance(this.expired) || advance(this.lookupRecord);
     },
 ```
@@ -30,7 +30,7 @@ Notice there is no logic around which one of those paths the model should take. 
 The `idle` function for our container manager, however, looks different
 
 ```
-idle: func{
+idle: sfunc{
         stay();
     },
 ```
@@ -60,7 +60,7 @@ There are three builtins for controlling state transitions:
 When multiple `advance()` or `leave()` calls are possible, you can use the `choose` keyword to make the non-deterministic choice explicit:
 
 ```
-idle: func{
+idle: sfunc{
     choose advance(this.expired) || advance(this.lookupRecord);
 },
 ```
@@ -100,11 +100,11 @@ Most of the time it is only necessary to initialize a new instance of the flow, 
 For this model we've decided we want to consider how resource utilization affects the behavior of the state machine. So whenever a request comes in, that request is going to change our stocks of resources somehow. Therefore our components being in particular states will trigger flows.
 
 ```
-lookupRecord: func{
+lookupRecord: sfunc{
         record.lookup;
         advance(this.returnRecord) || advance(this.createRecord);
     },
-    returnRecord: func{
+    returnRecord: sfunc{
         record.release;
         advance(this.idle);
     },
@@ -127,7 +127,7 @@ States are written and executed as functions, but they can also be referenced as
 For example if I want to know if the container manager is currently shutting down a container before I try to expire old records from my cache, I can do this
 
 ```
-expired: func{
+expired: sfunc{
         if !containerMng.shutdownContainer{
             record.expire;
             advance(this.idle);
