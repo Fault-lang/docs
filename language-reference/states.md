@@ -38,7 +38,7 @@ idle: sfunc{
 `stay()` means what you think it does. Do nothing. That's because what triggers a state change out of idle for the container manager is the behavior of the cache. Without the cache the container manager will stay idle forever.
 
 ```
-createRecord:func{
+createRecord:sfunc{
     advance(containerMng.pullContainer);
     },
 ```
@@ -114,7 +114,7 @@ lookupRecord: sfunc{
 While we don't see it in this model, we may want to use a stocks value to determine whether a certain state transition happens or not. We can use stocks in various conditionals. For example we may want to only create a container if we have space to create a record for it in our cache
 
 ```
-createRecord:func{
+createRecord:sfunc{
      if record.machine.block < 5 {
          advance(containerMng.pullContainer);
      }

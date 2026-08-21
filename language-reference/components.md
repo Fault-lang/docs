@@ -59,7 +59,7 @@ component replCache = states{
     returnRecord: sfunc{
         ...
     },
-    createRecord:func{
+    createRecord:sfunc{
         ...
     },
     expired: sfunc{
