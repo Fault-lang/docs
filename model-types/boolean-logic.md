@@ -199,6 +199,6 @@ assert when lock.heldByA then !lock.heldByB always;
 ## Key Concepts
 
 - **[Special Syntax](../language-reference/special_syntax)** — `when/then`, `choose`, `|`
-- **[Invariants](../invariants)** — assertions and assumptions
-- **[Data Types](../data-types)** — booleans, strings, unknowns
+- **[Invariants](../invariants/)** — assertions and assumptions
+- **[Data Types](../data-types/)** — booleans, strings, unknowns
 - **[Flows](../language-reference/flows)** — flow and func syntax

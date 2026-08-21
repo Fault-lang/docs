@@ -204,5 +204,5 @@ The solver finds a sequence of `submit` and `process` calls that drains enough t
 
 - **[Flows](../language-reference/flows)** — flow and func syntax
 - **[Invariants: Assumptions](../invariants/assumptions)** — using `assume` as synthesis goals
-- **[Glossary: `__`](../glossary#synthesis-slot)** — synthesis slot reference
-- **[Glossary: `unfunc`](../glossary#unfunc)** — declarative function reference
+- **[Glossary: `__`](../glossary/#synthesis-slot)** — synthesis slot reference
+- **[Glossary: `unfunc`](../glossary/#unfunc)** — declarative function reference

@@ -44,6 +44,7 @@ export default defineConfig({
           { text: 'States', link: '/language-reference/states' },
           { text: 'Stocks', link: '/language-reference/stocks' },
           { text: 'Flows', link: '/language-reference/flows' },
+          { text: 'Functions', link: '/language-reference/functions' },
           { text: 'Time', link: '/language-reference/time' },
           { text: 'Special Syntax', link: '/language-reference/special_syntax' },
         ]

@@ -420,7 +420,7 @@ def limits = stock{
 };
 ```
 
-See [Data Types](../data-types).
+See [Data Types](../data-types/).
 
 ---
 
@@ -555,7 +555,7 @@ def sensor = stock{
 };
 ```
 
-Results include probability annotations: `1.500000 (0.483941)`. See [Data Types](../data-types).
+Results include probability annotations: `1.500000 (0.483941)`. See [Data Types](../data-types/).
 
 ---
 
@@ -587,7 +587,7 @@ def s = stock{
 };
 ```
 
-Use unknowns when you want the solver to find interesting starting conditions rather than testing from a fixed baseline. See [Data Types](../data-types).
+Use unknowns when you want the solver to find interesting starting conditions rather than testing from a fixed baseline. See [Data Types](../data-types/).
 
 ---
 

@@ -166,5 +166,5 @@ Two simultaneous consumers each round — does the guard prevent the bucket from
 
 - **[Stocks](../language-reference/stocks)** — reservoirs of resources
 - **[Flows](../language-reference/flows)** — operations that change stocks
-- **[Data Types](../data-types)** — numeric, boolean, unknown, uncertain, and more
-- **[Invariants](../invariants)** — assertions and temporal qualifiers
+- **[Data Types](../data-types/)** — numeric, boolean, unknown, uncertain, and more
+- **[Invariants](../invariants/)** — assertions and temporal qualifiers

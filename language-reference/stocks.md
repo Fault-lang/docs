@@ -36,7 +36,7 @@ In Fault, stocks can be numeric values (floats or integers), booleans, or unknow
 
 The Fault compiler treats all numeric values as doubles (Real numbers in SMT, essentially floats) in order to be friendlier to the solver.
 
-For more information about different types of values [see the section on data types](../data-types)
+For more information about different types of values [see the section on data types](../data-types/)
 
 ## Stock Inheritance
 
